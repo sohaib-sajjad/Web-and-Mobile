@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1070953394604",
+    "project_id": "event-manager-flutter-app",
+    "storage_bucket": "event-manager-flutter-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1070953394604:android:d5e0b908f0c164861d0a09",
+        "android_client_info": {
+          "package_name": "com.example.event_manager_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpJNDA8swSHo_zjRpQ5Cx6NM4Lqtuseb0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

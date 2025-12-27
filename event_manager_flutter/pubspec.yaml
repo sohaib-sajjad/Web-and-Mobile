@@ -1,0 +1,27 @@
+name: event_manager_flutter
+description: A simple event management Flutter app with host and attendee sides.
+publish_to: 'none'
+version: 0.0.1
+environment:
+  sdk: ">=2.18.0 <3.0.0"
+  flutter: ">=3.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  shared_preferences: ^2.0.15
+  image_picker: ^1.2.1
+  intl: ^0.18.0
+  firebase_core: ^4.3.0
+  cloud_firestore: ^6.1.1
+  http: ^1.6.0
+  uuid: ^4.5.2
+  geolocator: ^14.0.2
+  permission_handler: ^12.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+flutter:
+  uses-material-design: true
