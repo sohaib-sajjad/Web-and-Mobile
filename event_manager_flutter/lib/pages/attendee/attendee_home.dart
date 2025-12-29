@@ -109,7 +109,7 @@ class _AttendeeHomeState extends State<AttendeeHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Attendee — Browse Events')),
+      appBar: AppBar(title: const Text('Attendee: Browse Events')),
       body: Column(
         children: [
           // Top filters

@@ -21,7 +21,7 @@ class _HostHomeState extends State<HostHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Host — Events')),
+      appBar: AppBar(title: const Text('Host: Events')),
       body: StreamBuilder<List<Event>>(
         stream: repo.watchAll(),
         builder: (context, snapshot) {
