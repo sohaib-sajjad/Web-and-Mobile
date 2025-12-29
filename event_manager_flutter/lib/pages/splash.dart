@@ -14,21 +14,19 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Timer(const Duration(seconds: 2), () {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const RoleSelection()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RoleSelection()),
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            FlutterLogo(size: 96),
-            SizedBox(height: 16),
-            Text('Event Manager', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          ],
+      body: SizedBox.expand(
+        child: Image.asset(
+          'assets/images/splash.jpeg',
+          fit: BoxFit.cover, // 👈 fills entire screen
         ),
       ),
     );

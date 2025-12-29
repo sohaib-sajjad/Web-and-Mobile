@@ -475,7 +475,7 @@ class _CreateEventState extends State<CreateEvent> {
 
     final id = const Uuid().v4();
 
-    // If your Event model doesn't yet include lat/lng, just remove those fields.
+
     final e = Event(
       id: id,
       title: _title.text.trim(),

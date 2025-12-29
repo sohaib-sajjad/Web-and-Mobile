@@ -20,7 +20,7 @@ class EventManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Event Manager',
+      // title: 'Event Manager',
       theme: ThemeData(primarySwatch: Colors.indigo),
       home: const SplashScreen(),
     );

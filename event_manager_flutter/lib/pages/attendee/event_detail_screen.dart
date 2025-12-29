@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../models/event.dart';
 
@@ -15,32 +17,114 @@ class EventDetailScreen extends StatefulWidget {
 }
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
-  bool _registered = false;
+  static const String _customerName = 'Sohaib Sajjad';
 
-  @override
-  void initState() {
-    super.initState();
-    _loadRegisterStatus();
+  final _firestore = FirebaseFirestore.instance;
+
+  bool _ticketLoading = false;
+
+  Future<String> _createTicketAndSave() async {
+    final ticketId = const Uuid().v4();
+
+    final record = {
+      'ticketId': ticketId,
+      'customerName': _customerName,
+      'timestamp': Timestamp.now(),
+    };
+
+    await _firestore.collection('events').doc(widget.event.id).update({
+      'ticketsSold': FieldValue.arrayUnion([record]),
+    });
+
+    return ticketId;
   }
 
-  Future<void> _loadRegisterStatus() async {
-    final sp = await SharedPreferences.getInstance();
-    final list = sp.getStringList('registered') ?? [];
-    setState(() => _registered = list.contains(widget.event.id));
+  void _showQrTicket({
+    required String ticketId,
+  }) {
+    final qrPayload = jsonEncode({
+      'eventId': widget.event.id,
+      'title': widget.event.title,
+      'date': widget.event.date.toIso8601String(),
+      'user': _customerName,
+      'ticketId': ticketId,
+    });
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Your Event Ticket',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+
+                QrImageView(
+                  data: qrPayload,
+                  size: 220,
+                  backgroundColor: Colors.white,
+                ),
+
+                const SizedBox(height: 16),
+
+                Text(
+                  widget.event.title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 6),
+                Text('Attendee: $_customerName'),
+
+                const SizedBox(height: 6),
+                Text(
+                  'Ticket ID: $ticketId',
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                ),
+
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Future<void> _toggleRegister() async {
-    final sp = await SharedPreferences.getInstance();
-    final list = sp.getStringList('registered') ?? [];
+  Future<void> _handleGetTicket() async {
+    if (_ticketLoading) return;
 
-    if (_registered) {
-      list.remove(widget.event.id);
-    } else {
-      list.add(widget.event.id);
+    setState(() => _ticketLoading = true);
+
+    try {
+      final ticketId = await _createTicketAndSave();
+      if (!mounted) return;
+      _showQrTicket(ticketId: ticketId);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create ticket: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _ticketLoading = false);
     }
-
-    await sp.setStringList('registered', list);
-    setState(() => _registered = !_registered);
   }
 
   @override
@@ -53,7 +137,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // IMAGE
+            // EVENT IMAGE
             if (e.imageBase64.isNotEmpty)
               SizedBox(
                 height: 240,
@@ -77,72 +161,51 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 🔹 TITLE
                   Text(
                     e.title,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
+                  const SizedBox(height: 12),
 
-                  const SizedBox(height: 8),
-
-                  // DATE
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today, size: 18),
-                      const SizedBox(width: 8),
-                      Text(e.date.toLocal().toString()),
-                    ],
+                  _InfoRow(
+                    icon: Icons.calendar_today,
+                    text: e.date.toLocal().toString(),
                   ),
-
-                  const SizedBox(height: 6),
-
-                  // LOCATION
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(e.location)),
-                    ],
+                  _InfoRow(
+                    icon: Icons.location_on,
+                    text: e.location,
                   ),
-
-                  const SizedBox(height: 6),
-
-                  // CATEGORY
-                  Row(
-                    children: [
-                      const Icon(Icons.category, size: 18),
-                      const SizedBox(width: 8),
-                      Text(e.category),
-                    ],
+                  _InfoRow(
+                    icon: Icons.category,
+                    text: e.category,
                   ),
 
                   const SizedBox(height: 12),
-
-                  // OPTIONAL INFO
                   if (e.capacity != null)
-                    Text('Capacity: ${e.capacity}'),
-
+                    _InfoRow(icon: Icons.people, text: 'Capacity: ${e.capacity}'),
                   if (e.price != null)
-                    Text('Price: €${e.price!.toStringAsFixed(2)}'),
+                    _InfoRow(icon: Icons.euro, text: '€${e.price!.toStringAsFixed(2)}'),
 
-                  const Divider(height: 24),
+                  const Divider(height: 32),
 
-                  // DESCRIPTION
                   Text(
                     e.description,
                     style: const TextStyle(fontSize: 16),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
-                  // REGISTER BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _toggleRegister,
-                      child: Text(
-                        _registered ? 'Registered' : 'Register',
-                      ),
+                      onPressed: _ticketLoading ? null : _handleGetTicket,
+                      child: _ticketLoading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Get Ticket'),
                     ),
                   ),
                 ],
@@ -150,6 +213,31 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoRow({
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text)),
+        ],
       ),
     );
   }
